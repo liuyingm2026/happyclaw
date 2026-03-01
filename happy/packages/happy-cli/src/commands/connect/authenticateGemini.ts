@@ -14,8 +14,9 @@ import { GeminiAuthTokens, PKCECodes } from './types';
 const execAsync = promisify(exec);
 
 // Google OAuth Configuration for Gemini
-const CLIENT_ID = '';
-const CLIENT_SECRET = '${GOOGLE_CLIENT_SECRET}';
+// Configure via environment variables: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
+const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
+const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
 const AUTHORIZE_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const DEFAULT_PORT = 54545;
