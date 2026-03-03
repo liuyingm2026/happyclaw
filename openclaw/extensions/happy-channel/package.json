@@ -1,0 +1,36 @@
+{
+    "name": "@openclaw/happy-channel",
+    "version": "1.0.0",
+    "description": "Happy Channel Plugin for OpenClaw - enables AI chat through Happy mobile/web clients",
+    "main": "index.ts",
+    "types": "dist/index.d.ts",
+    "scripts": {
+        "build": "tsc",
+        "dev": "tsc --watch",
+        "test": "vitest",
+        "lint": "eslint src --ext .ts"
+    },
+    "dependencies": {
+        "axios": "^1.6.8"
+    },
+    "devDependencies": {
+        "@types/node": "^22.0.0",
+        "openclaw": "file:../..",
+        "typescript": "^5.7.0",
+        "vitest": "^2.0.0"
+    },
+    "keywords": [
+        "openclaw",
+        "happy",
+        "channel",
+        "messaging",
+        "ai",
+        "e2e-encryption"
+    ],
+    "author": "Happy Coder Team",
+    "license": "MIT",
+    "openclaw": {
+        "plugin": true,
+        "type": "channel"
+    }
+}

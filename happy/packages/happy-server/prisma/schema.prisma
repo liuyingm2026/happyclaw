@@ -52,6 +52,8 @@ model Account {
     AccessKey           AccessKey[]
     UserFeedItem        UserFeedItem[]
     UserKVStore         UserKVStore[]
+    OpenClawConversations OpenClawConversation[]
+    OpenClawTokenVaults   OpenClawTokenVault[]
 }
 
 model TerminalAuthRequest {
@@ -359,5 +361,61 @@ model UserKVStore {
     updatedAt DateTime @updatedAt
 
     @@unique([accountId, key])
+    @@index([accountId])
+}
+
+//
+// OpenClaw Integration
+//
+
+model OpenClawConversation {
+    id                String            @id @default(cuid())
+    accountId         String
+    account           Account           @relation(fields: [accountId], references: [id], onDelete: Cascade)
+    title             String?
+    openclawSessionId String?           // OpenClaw session ID for context binding
+    metadata          String?           // Encrypted metadata
+    metadataVersion   Int               @default(0)
+    dataEncryptionKey Bytes?            // Encryption key for this conversation
+    seq               Int               @default(0)
+    active            Boolean           @default(true)
+    lastActiveAt      DateTime          @default(now())
+    createdAt         DateTime          @default(now())
+    updatedAt         DateTime          @updatedAt
+    messages          OpenClawMessage[]
+
+    @@index([accountId])
+    @@index([accountId, updatedAt(sort: Desc)])
+    @@index([openclawSessionId])
+}
+
+model OpenClawMessage {
+    id             String              @id @default(cuid())
+    conversationId String
+    conversation   OpenClawConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+    localId        String?             // Client-side ID for deduplication
+    seq            Int
+    role           String              // "user" | "assistant"
+    content        Bytes               // E2E encrypted content
+    status         String              @default("pending") // "pending" | "streaming" | "complete" | "failed"
+    createdAt      DateTime            @default(now())
+    updatedAt      DateTime            @updatedAt
+
+    @@unique([conversationId, localId])
+    @@index([conversationId, seq])
+    @@index([conversationId, createdAt(sort: Desc)])
+}
+
+model OpenClawTokenVault {
+    id             String   @id @default(cuid())
+    accountId      String
+    account        Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+    gatewayUrl     String   // OpenClaw Gateway URL
+    encryptedToken Bytes    // E2E encrypted Gateway token
+    tokenVersion   Int      @default(0)
+    createdAt      DateTime @default(now())
+    updatedAt      DateTime @updatedAt
+
+    @@unique([accountId, gatewayUrl])
     @@index([accountId])
 }

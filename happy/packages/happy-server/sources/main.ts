@@ -10,6 +10,7 @@ import { startDatabaseMetricsUpdater } from "@/app/monitoring/metrics2";
 import { initEncrypt } from "./modules/encrypt";
 import { initGithub } from "./modules/github";
 import { loadFiles } from "./storage/files";
+import { initOpenClawGateway } from "./modules/openclawGatewayInit";
 
 async function main() {
 
@@ -41,6 +42,9 @@ async function main() {
     await startMetricsServer();
     startDatabaseMetricsUpdater();
     startTimeout();
+
+    // Initialize OpenClaw Gateway connection
+    initOpenClawGateway();
 
     //
     // Ready

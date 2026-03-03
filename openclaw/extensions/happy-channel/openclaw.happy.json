@@ -1,0 +1,12 @@
+# Happy Channel Plugin Configuration
+
+# Connection settings
+HAPPY_SERVER_URL=https://your-happy-server.com
+HAPPY_CHANNEL_SECRET=your-hmac-shared-secret
+
+# Account settings
+HAPPY_ACCOUNT_ID=your-happy-account-id
+
+# Gateway settings (optional - defaults to localhost)
+OPENCLAW_GATEWAY_URL=ws://127.0.0.1:18789
+OPENCLAW_GATEWAY_TOKEN=your-gateway-token

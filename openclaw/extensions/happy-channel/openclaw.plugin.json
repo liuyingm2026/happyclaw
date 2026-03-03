@@ -1,0 +1,25 @@
+{
+  "id": "happy-channel",
+  "channels": ["happy"],
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "default": false,
+        "description": "Enable Happy channel integration"
+      },
+      "serverUrl": {
+        "type": "string",
+        "default": "http://localhost:3005",
+        "description": "Happy Server URL"
+      },
+      "channelSecret": {
+        "type": "string",
+        "default": "",
+        "description": "Shared secret for HMAC signing"
+      }
+    }
+  }
+}
