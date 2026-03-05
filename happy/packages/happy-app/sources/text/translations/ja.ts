@@ -22,6 +22,7 @@ export const ja: TranslationStructure = {
         // Tab navigation labels
         inbox: '受信トレイ',
         sessions: 'ターミナル',
+        openclaw: 'OpenClaw',
         settings: '設定',
     },
 
@@ -30,6 +31,16 @@ export const ja: TranslationStructure = {
         emptyTitle: '受信トレイは空です',
         emptyDescription: '友達と接続してセッションを共有しましょう',
         updates: '更新',
+    },
+
+    openclaw: {
+        // OpenClaw screen
+        gatewayConnected: 'ゲートウェイ接続済み',
+        gatewayDisconnected: 'ゲートウェイ切断',
+        noConversations: '会話なし',
+        noConversationsHint: 'OpenClawで新しい会話を始める',
+        newConversation: '新しい会話',
+        inputPlaceholder: 'メッセージを入力...',
     },
 
     common: {
@@ -121,6 +132,7 @@ export const ja: TranslationStructure = {
         justNow: 'たった今',
         minutesAgo: ({ count }: { count: number }) => `${count}分前`,
         hoursAgo: ({ count }: { count: number }) => `${count}時間前`,
+        daysAgo: ({ count }: { count: number }) => `${count}日前`,
     },
 
     connect: {

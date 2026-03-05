@@ -19,6 +19,7 @@ export const ca: TranslationStructure = {
         // Tab navigation labels
         inbox: 'Safata',
         sessions: 'Terminals',
+        openclaw: 'OpenClaw',
         settings: 'Configuració',
     },
 
@@ -27,6 +28,16 @@ export const ca: TranslationStructure = {
         emptyTitle: 'Safata buida',
         emptyDescription: 'Connecta\'t amb amics per començar a compartir sessions',
         updates: 'Actualitzacions',
+    },
+
+    openclaw: {
+        // OpenClaw screen
+        gatewayConnected: 'Gateway Connected',
+        gatewayDisconnected: 'Gateway Disconnected',
+        noConversations: 'No Conversations',
+        noConversationsHint: 'Start a new conversation with OpenClaw',
+        newConversation: 'New Conversation',
+        inputPlaceholder: 'Type a message...',
     },
 
     common: {
@@ -89,6 +100,7 @@ export const ca: TranslationStructure = {
         justNow: 'ara mateix',
         minutesAgo: ({ count }: { count: number }) => `fa ${count} minut${count !== 1 ? 's' : ''}`,
         hoursAgo: ({ count }: { count: number }) => `fa ${count} hora${count !== 1 ? 'es' : ''}`,
+        daysAgo: ({ count }: { count: number }) => `fa ${count} dia${count !== 1 ? 's' : ''}`,
     },
 
     connect: {

@@ -325,6 +325,12 @@ export default function RootLayout() {
                     headerBackTitle: t('common.back'),
                 }}
             />
+            <Stack.Screen
+                name="openclaw/[id]"
+                options={{
+                    headerShown: false,
+                }}
+            />
         </Stack>
     );
 }

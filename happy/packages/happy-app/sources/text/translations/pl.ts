@@ -30,6 +30,7 @@ export const pl: TranslationStructure = {
         // Tab navigation labels
         inbox: 'Skrzynka',
         sessions: 'Terminale',
+        openclaw: 'OpenClaw',
         settings: 'Ustawienia',
     },
 
@@ -38,6 +39,16 @@ export const pl: TranslationStructure = {
         emptyTitle: 'Pusta skrzynka',
         emptyDescription: 'Połącz się z przyjaciółmi, aby zacząć udostępniać sesje',
         updates: 'Aktualizacje',
+    },
+
+    openclaw: {
+        // OpenClaw screen
+        gatewayConnected: 'Gateway Connected',
+        gatewayDisconnected: 'Gateway Disconnected',
+        noConversations: 'No Conversations',
+        noConversationsHint: 'Start a new conversation with OpenClaw',
+        newConversation: 'New Conversation',
+        inputPlaceholder: 'Type a message...',
     },
 
     common: {
@@ -100,6 +111,7 @@ export const pl: TranslationStructure = {
         justNow: 'teraz',
         minutesAgo: ({ count }: { count: number }) => `${count} ${plural({ count, one: 'minuta', few: 'minuty', many: 'minut' })} temu`,
         hoursAgo: ({ count }: { count: number }) => `${count} ${plural({ count, one: 'godzina', few: 'godziny', many: 'godzin' })} temu`,
+        daysAgo: ({ count }: { count: number }) => `${count} dni temu`,
     },
 
     connect: {

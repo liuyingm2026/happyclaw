@@ -111,3 +111,82 @@ export type UpdateBody = UpdateNewMessageBody;
 
 export const UpdateSchema = CoreUpdateContainerSchema;
 export type Update = CoreUpdateContainer;
+
+// ============================================
+// OpenClaw Integration Types
+// ============================================
+
+// OpenClaw message content (E2E encrypted)
+export const OpenClawMessageContentSchema = z.object({
+    c: z.string(),  // Encrypted content
+    t: z.literal('openclaw-encrypted'),
+});
+export type OpenClawMessageContent = z.infer<typeof OpenClawMessageContentSchema>;
+
+// OpenClaw message schema
+export const OpenClawMessageSchema = z.object({
+    id: z.string(),
+    conversationId: z.string(),
+    seq: z.number(),
+    localId: z.string().nullish(),
+    role: z.enum(['user', 'assistant']),
+    content: OpenClawMessageContentSchema,
+    status: z.enum(['pending', 'streaming', 'complete', 'failed']),
+    createdAt: z.number(),
+    updatedAt: z.number(),
+});
+export type OpenClawMessage = z.infer<typeof OpenClawMessageSchema>;
+
+// OpenClaw conversation schema
+export const OpenClawConversationSchema = z.object({
+    id: z.string(),
+    accountId: z.string(),
+    title: z.string().nullish(),
+    openclawSessionId: z.string().nullish(),
+    active: z.boolean(),
+    lastActiveAt: z.number(),
+    createdAt: z.number(),
+    updatedAt: z.number(),
+});
+export type OpenClawConversation = z.infer<typeof OpenClawConversationSchema>;
+
+// OpenClaw update types
+export const UpdateOpenClawNewConversationBodySchema = z.object({
+    t: z.literal('openclaw-new-conversation'),
+    conversation: OpenClawConversationSchema,
+});
+export type UpdateOpenClawNewConversationBody = z.infer<typeof UpdateOpenClawNewConversationBodySchema>;
+
+export const UpdateOpenClawMessageBodySchema = z.object({
+    t: z.literal('openclaw-message'),
+    conversationId: z.string(),
+    message: OpenClawMessageSchema,
+});
+export type UpdateOpenClawMessageBody = z.infer<typeof UpdateOpenClawMessageBodySchema>;
+
+export const UpdateOpenClawChunkBodySchema = z.object({
+    t: z.literal('openclaw-chunk'),
+    conversationId: z.string(),
+    messageId: z.string(),
+    chunk: z.string(),  // Encrypted chunk
+    seq: z.number(),    // Chunk sequence number
+    isComplete: z.boolean(),
+});
+export type UpdateOpenClawChunkBody = z.infer<typeof UpdateOpenClawChunkBodySchema>;
+
+export const UpdateOpenClawStatusBodySchema = z.object({
+    t: z.literal('openclaw-status'),
+    connected: z.boolean(),
+    gatewayUrl: z.string().nullish(),
+    lastConnectedAt: z.number().nullish(),
+});
+export type UpdateOpenClawStatusBody = z.infer<typeof UpdateOpenClawStatusBodySchema>;
+
+// Extended update body schema including OpenClaw types
+export const OpenClawUpdateBodySchema = z.discriminatedUnion('t', [
+    UpdateOpenClawNewConversationBodySchema,
+    UpdateOpenClawMessageBodySchema,
+    UpdateOpenClawChunkBodySchema,
+    UpdateOpenClawStatusBodySchema,
+]);
+export type OpenClawUpdateBody = z.infer<typeof OpenClawUpdateBodySchema>;

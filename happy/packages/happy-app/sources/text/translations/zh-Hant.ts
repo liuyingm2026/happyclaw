@@ -21,6 +21,7 @@ export const zhHant: TranslationStructure = {
         // Tab navigation labels
         inbox: '收件匣',
         sessions: '終端',
+        openclaw: 'OpenClaw',
         settings: '設定',
     },
 
@@ -29,6 +30,16 @@ export const zhHant: TranslationStructure = {
         emptyTitle: '收件匣是空的',
         emptyDescription: '與好友建立連結，開始共享工作階段',
         updates: '更新',
+    },
+
+    openclaw: {
+        // OpenClaw screen
+        gatewayConnected: '閘道已連線',
+        gatewayDisconnected: '閘道已斷開',
+        noConversations: '沒有會話',
+        noConversationsHint: '開始與OpenClaw的新對話',
+        newConversation: '新對話',
+        inputPlaceholder: '輸入訊息...',
     },
 
     common: {
@@ -90,6 +101,7 @@ export const zhHant: TranslationStructure = {
         justNow: '剛剛',
         minutesAgo: ({ count }: { count: number }) => `${count} 分鐘前`,
         hoursAgo: ({ count }: { count: number }) => `${count} 小時前`,
+        daysAgo: ({ count }: { count: number }) => `${count}天前`,
     },
 
     connect: {

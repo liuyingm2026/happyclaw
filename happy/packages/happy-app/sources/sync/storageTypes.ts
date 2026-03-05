@@ -174,3 +174,40 @@ export interface GitStatus {
     behindCount?: number; // Commits behind upstream
     stashCount?: number; // Number of stash entries
 }
+
+//
+// OpenClaw Types
+//
+
+export interface OpenClawMessage {
+    id: string;
+    conversationId: string;
+    seq: number;
+    localId: string | null;
+    role: 'user' | 'assistant';
+    content: string;  // Decrypted content
+    status: 'pending' | 'streaming' | 'complete' | 'failed';
+    createdAt: number;
+    updatedAt: number;
+}
+
+export interface OpenClawConversation {
+    id: string;
+    accountId: string;
+    title: string | null;
+    openclawSessionId: string | null;
+    active: boolean;
+    lastActiveAt: number;
+    createdAt: number;
+    updatedAt: number;
+    // Computed fields
+    unreadCount?: number;
+    lastMessagePreview?: string | null;
+}
+
+export interface OpenClawGatewayStatus {
+    connected: boolean;
+    gatewayUrl: string | null;
+    lastConnectedAt: number | null;
+    lastError: string | null;
+}

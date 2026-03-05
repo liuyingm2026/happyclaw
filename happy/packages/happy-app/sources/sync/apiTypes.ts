@@ -111,6 +111,56 @@ export const ApiKvBatchUpdateSchema = z.object({
     }))
 });
 
+// OpenClaw update schemas
+export const ApiOpenClawNewConversationSchema = z.object({
+    t: z.literal('openclaw-new-conversation'),
+    conversation: z.object({
+        id: z.string(),
+        accountId: z.string(),
+        title: z.string().nullable(),
+        openclawSessionId: z.string().nullable(),
+        active: z.boolean(),
+        lastActiveAt: z.number(),
+        createdAt: z.number(),
+        updatedAt: z.number(),
+    }),
+});
+
+export const ApiOpenClawMessageSchema = z.object({
+    t: z.literal('openclaw-message'),
+    conversationId: z.string(),
+    message: z.object({
+        id: z.string(),
+        conversationId: z.string(),
+        seq: z.number(),
+        localId: z.string().nullable(),
+        role: z.enum(['user', 'assistant']),
+        content: z.object({
+            c: z.string(),  // Encrypted content
+            t: z.literal('openclaw-encrypted'),
+        }),
+        status: z.enum(['pending', 'streaming', 'complete', 'failed']),
+        createdAt: z.number(),
+        updatedAt: z.number(),
+    }),
+});
+
+export const ApiOpenClawChunkSchema = z.object({
+    t: z.literal('openclaw-chunk'),
+    conversationId: z.string(),
+    messageId: z.string(),
+    chunk: z.string(),  // Encrypted chunk
+    seq: z.number(),
+    isComplete: z.boolean(),
+});
+
+export const ApiOpenClawStatusSchema = z.object({
+    t: z.literal('openclaw-status'),
+    connected: z.boolean(),
+    gatewayUrl: z.string().nullable(),
+    lastConnectedAt: z.number().nullable(),
+});
+
 // Use a plain union here to avoid runtime discriminator extraction issues
 // when some schemas come from shared package exports.
 export const ApiUpdateSchema = z.union([
@@ -125,7 +175,11 @@ export const ApiUpdateSchema = z.union([
     ApiDeleteArtifactSchema,
     ApiRelationshipUpdatedSchema,
     ApiNewFeedPostSchema,
-    ApiKvBatchUpdateSchema
+    ApiKvBatchUpdateSchema,
+    ApiOpenClawNewConversationSchema,
+    ApiOpenClawMessageSchema,
+    ApiOpenClawChunkSchema,
+    ApiOpenClawStatusSchema,
 ]);
 
 export type ApiUpdateNewMessage = z.infer<typeof ApiUpdateNewMessageSchema>;

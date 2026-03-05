@@ -19,6 +19,7 @@ export const es: TranslationStructure = {
         // Tab navigation labels
         inbox: 'Bandeja',
         sessions: 'Terminales',
+        openclaw: 'OpenClaw',
         settings: 'Configuración',
     },
 
@@ -27,6 +28,16 @@ export const es: TranslationStructure = {
         emptyTitle: 'Bandeja vacía',
         emptyDescription: 'Conéctate con amigos para empezar a compartir sesiones',
         updates: 'Actualizaciones',
+    },
+
+    openclaw: {
+        // OpenClaw screen
+        gatewayConnected: 'Gateway Connected',
+        gatewayDisconnected: 'Gateway Disconnected',
+        noConversations: 'No Conversations',
+        noConversationsHint: 'Start a new conversation with OpenClaw',
+        newConversation: 'New Conversation',
+        inputPlaceholder: 'Type a message...',
     },
 
     common: {
@@ -89,6 +100,7 @@ export const es: TranslationStructure = {
         justNow: 'ahora mismo',
         minutesAgo: ({ count }: { count: number }) => `hace ${count} minuto${count !== 1 ? 's' : ''}`,
         hoursAgo: ({ count }: { count: number }) => `hace ${count} hora${count !== 1 ? 's' : ''}`,
+        daysAgo: ({ count }: { count: number }) => `hace ${count} día${count !== 1 ? 's' : ''}`,
     },
 
     connect: {

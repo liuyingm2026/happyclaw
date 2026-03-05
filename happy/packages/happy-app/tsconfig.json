@@ -7,6 +7,9 @@
       "@/*": [
         "./sources/*"
       ],
+      "@slopus/happy-wire": [
+        "../happy-wire/src/index.ts"
+      ],
       "hello-world": [ "../../hello-world" ]
     },
     "jsx": "react-jsx",

@@ -40,6 +40,16 @@ import { fetchFeed } from './apiFeed';
 import { FeedItem } from './feedTypes';
 import { UserProfile } from './friendTypes';
 import { resolveMessageModeMeta } from './messageMeta';
+import {
+    fetchOpenClawConversations,
+    fetchOpenClawMessages,
+    fetchOpenClawGatewayStatus,
+    sendOpenClawMessage,
+    decryptOpenClawMessageApi,
+    apiMessageToStorage,
+    apiConversationToStorage,
+} from './apiOpenClaw';
+import { OpenClawConversation, OpenClawMessage } from './storageTypes';
 
 type V3GetSessionMessagesResponse = {
     messages: ApiMessage[];
@@ -90,6 +100,8 @@ class Sync {
     private friendsSync: InvalidateSync;
     private friendRequestsSync: InvalidateSync;
     private feedSync: InvalidateSync;
+    private openclawSync: InvalidateSync;
+    private openclawMessagesSync: InvalidateSync;
     private activityAccumulator: ActivityUpdateAccumulator;
     private pendingSettings: Partial<Settings> = loadPendingSettings();
     private appState: AppStateStatus = AppState.currentState;
@@ -113,6 +125,8 @@ class Sync {
         this.friendsSync = new InvalidateSync(this.fetchFriends);
         this.friendRequestsSync = new InvalidateSync(this.fetchFriendRequests);
         this.feedSync = new InvalidateSync(this.fetchFeed);
+        this.openclawSync = new InvalidateSync(this.fetchOpenClawConversations);
+        this.openclawMessagesSync = new InvalidateSync(() => Promise.resolve()); // Placeholder, set per-conversation
 
         const registerPushToken = async () => {
             if (__DEV__) {
@@ -1271,6 +1285,96 @@ class Sync {
         }
     }
 
+    // OpenClaw methods
+    private fetchOpenClawConversations = async () => {
+        if (!this.credentials) return;
+
+        try {
+            log.log('🤖 Fetching OpenClaw conversations...');
+            const response = await fetchOpenClawConversations(this.credentials.token);
+
+            const conversations = response.conversations.map(apiConv =>
+                apiConversationToStorage(apiConv)
+            );
+
+            storage.getState().applyOpenClawConversations(conversations);
+            log.log(`🤖 fetchOpenClawConversations completed - loaded ${conversations.length} conversations`);
+
+            // Also fetch gateway status
+            const status = await fetchOpenClawGatewayStatus(this.credentials.token);
+            storage.getState().setOpenClawGatewayStatus(status);
+        } catch (error) {
+            console.error('Failed to fetch OpenClaw conversations:', error);
+        }
+    }
+
+    fetchOpenClawMessages = async (conversationId: string) => {
+        if (!this.credentials) return;
+
+        try {
+            log.log(`🤖 Fetching OpenClaw messages for ${conversationId}...`);
+            const response = await fetchOpenClawMessages(this.credentials.token, conversationId);
+
+            // Decrypt all messages
+            const decryptedMessages: OpenClawMessage[] = [];
+            for (const msg of response.messages) {
+                try {
+                    const decryptedContent = await decryptOpenClawMessageApi(
+                        msg.content,
+                        this.encryption
+                    );
+                    decryptedMessages.push(apiMessageToStorage(msg, conversationId, decryptedContent));
+                } catch (error) {
+                    console.error(`Failed to decrypt message ${msg.id}:`, error);
+                }
+            }
+
+            storage.getState().applyOpenClawMessages(conversationId, decryptedMessages);
+            log.log(`🤖 fetchOpenClawMessages completed - loaded ${decryptedMessages.length} messages`);
+        } catch (error) {
+            console.error('Failed to fetch OpenClaw messages:', error);
+        }
+    }
+
+    sendOpenClawMessage = async (conversationId: string, content: string) => {
+        if (!this.credentials) return;
+
+        const idempotencyKey = randomUUID();
+
+        try {
+            const response = await sendOpenClawMessage(
+                this.credentials.token,
+                conversationId,
+                content,
+                this.encryption,
+                idempotencyKey
+            );
+
+            // Add optimistic message to storage
+            const optimisticMessage: OpenClawMessage = {
+                id: response.messageId,
+                conversationId,
+                seq: 0,
+                localId: idempotencyKey,
+                role: 'user',
+                content,
+                status: response.status === 'sent' ? 'complete' : 'pending',
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+            };
+
+            storage.getState().addOpenClawMessage(conversationId, optimisticMessage);
+            log.log(`🤖 sendOpenClawMessage completed - messageId: ${response.messageId}`);
+        } catch (error) {
+            console.error('Failed to send OpenClaw message:', error);
+            throw error;
+        }
+    }
+
+    invalidateOpenClaw = () => {
+        this.openclawSync.invalidate();
+    }
+
     private syncSettings = async () => {
         if (!this.credentials) return;
 
@@ -2151,6 +2255,85 @@ class Sync {
             
             // Apply to storage (will handle repeatKey replacement)
             storage.getState().applyFeedItems([feedItem]);
+        } else if (updateData.body.t === 'openclaw-new-conversation') {
+            log.log('🤖 Received openclaw-new-conversation update');
+            const conv = updateData.body.conversation;
+            const conversation: OpenClawConversation = {
+                id: conv.id,
+                accountId: conv.accountId,
+                title: conv.title,
+                openclawSessionId: conv.openclawSessionId,
+                active: conv.active,
+                lastActiveAt: conv.lastActiveAt,
+                createdAt: conv.createdAt,
+                updatedAt: conv.updatedAt,
+            };
+            storage.getState().applyOpenClawConversations([conversation]);
+        } else if (updateData.body.t === 'openclaw-message') {
+            log.log('🤖 Received openclaw-message update');
+            const { conversationId, message } = updateData.body;
+
+            try {
+                // Decrypt the message content
+                const decryptedContent = await decryptOpenClawMessageApi(
+                    message.content.c,
+                    this.encryption
+                );
+
+                const storageMessage: OpenClawMessage = {
+                    id: message.id,
+                    conversationId: message.conversationId,
+                    seq: message.seq,
+                    localId: message.localId,
+                    role: message.role,
+                    content: decryptedContent,
+                    status: message.status,
+                    createdAt: message.createdAt,
+                    updatedAt: message.updatedAt,
+                };
+
+                storage.getState().addOpenClawMessage(conversationId, storageMessage);
+
+                // Update conversation's lastActiveAt
+                const existingConv = storage.getState().openclawConversations[conversationId];
+                if (existingConv) {
+                    storage.getState().applyOpenClawConversations([{
+                        ...existingConv,
+                        lastActiveAt: Math.max(existingConv.lastActiveAt, message.createdAt),
+                        updatedAt: message.updatedAt,
+                    }]);
+                }
+            } catch (error) {
+                console.error('Failed to decrypt OpenClaw message:', error);
+            }
+        } else if (updateData.body.t === 'openclaw-chunk') {
+            log.log('🤖 Received openclaw-chunk update');
+            const { conversationId, messageId, chunk, isComplete } = updateData.body;
+
+            try {
+                // Decrypt the chunk
+                const decryptedChunk = await decryptOpenClawMessageApi(chunk, this.encryption);
+
+                // Update streaming content
+                storage.getState().updateOpenClawStreamingContent(
+                    conversationId,
+                    messageId,
+                    decryptedChunk,
+                    isComplete
+                );
+            } catch (error) {
+                console.error('Failed to decrypt OpenClaw chunk:', error);
+            }
+        } else if (updateData.body.t === 'openclaw-status') {
+            log.log('🤖 Received openclaw-status update');
+            const { connected, gatewayUrl, lastConnectedAt } = updateData.body;
+
+            storage.getState().setOpenClawGatewayStatus({
+                connected,
+                gatewayUrl,
+                lastConnectedAt,
+                lastError: null,
+            });
         }
     }
 

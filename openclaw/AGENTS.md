@@ -239,6 +239,72 @@
   - per-plugin: `npm view @openclaw/<name> version --userconfig "$(mktemp)"` should be `2026.2.17`
   - core guard: `npm view openclaw version --userconfig "$(mktemp)"` should stay at previous version unless explicitly requested.
 
+## Happy Channel Extension
+
+The `extensions/happy-channel` directory contains a channel plugin that enables OpenClaw to communicate through Happy's mobile/web clients.
+
+### Architecture
+
+The Happy channel plugin (`extensions/happy-channel`) implements the `ChannelPlugin` interface from `openclaw/plugin-sdk`:
+
+- **Location**: `extensions/happy-channel/`
+- **Entry Point**: `index.ts` - exports the plugin definition
+- **Implementation**: `src/channel.ts` - implements `ChannelPlugin<ResolvedHappyAccount, HappyProbe>`
+
+### Key Components
+
+1. **Config Adapter**: Manages Happy account configuration (server URL, channel secret)
+2. **Outbound Adapter**: Sends messages to Happy Server via HTTP webhook with HMAC signing
+3. **Status Adapter**: Probes connection health to Happy Server
+4. **Directory Adapter**: Lists peers/groups (currently empty - Happy uses direct DMs only)
+
+### Happy Server Integration
+
+The plugin communicates with Happy Server at these endpoints:
+
+- `POST /v1/openclaw/webhook` - Send AI responses to Happy clients
+- `GET /v1/openclaw/gateway-status` - Health check endpoint
+
+### Wire Protocol
+
+Message types are defined in `happy/packages/happy-wire/src/openclaw.ts`:
+
+- `OpenClawWebhookMessage` - Messages from Plugin to Server
+- `OpenClawSendMessage` - Messages from client to Plugin
+- `OpenClawTokenDecryptRequest/Response` - Token decryption flow
+
+### Configuration
+
+Happy channel is configured via `channels.happy` in OpenClaw config:
+
+```json
+{
+  "channels": {
+    "happy": {
+      "accounts": {
+        "default": {
+          "enabled": true,
+          "serverUrl": "http://localhost:3005",
+          "channelSecret": "your-hmac-secret"
+        }
+      }
+    }
+  }
+}
+```
+
+### Development Workflow
+
+1. Build the plugin: `cd extensions/happy-channel && npm run build`
+2. Test locally: Configure `serverUrl: "http://localhost:3005"` for local Happy Server
+3. Happy Server must implement `/v1/openclaw/*` endpoints
+
+### Integration Points
+
+- **Happy App** (`happy/packages/happy-app`): Mobile/web client with OpenClaw chat UI
+- **Happy Server** (`happy/packages/happy-server`): Backend that receives webhook messages
+- **Happy Wire** (`happy/packages/happy-wire`): Shared protocol types
+
 ## Changelog Release Notes
 
 - When cutting a mac release with beta GitHub prerelease:

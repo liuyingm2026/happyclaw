@@ -21,6 +21,7 @@ export const zhHans: TranslationStructure = {
         // Tab navigation labels
         inbox: '收件箱',
         sessions: '终端',
+        openclaw: 'OpenClaw',
         settings: '设置',
     },
 
@@ -29,6 +30,16 @@ export const zhHans: TranslationStructure = {
         emptyTitle: '收件箱为空',
         emptyDescription: '与好友建立连接，开始共享会话',
         updates: '更新',
+    },
+
+    openclaw: {
+        // OpenClaw screen
+        gatewayConnected: '网关已连接',
+        gatewayDisconnected: '网关已断开',
+        noConversations: '没有会话',
+        noConversationsHint: '开始与OpenClaw的新对话',
+        newConversation: '新对话',
+        inputPlaceholder: '输入消息...',
     },
 
     common: {
@@ -91,6 +102,7 @@ export const zhHans: TranslationStructure = {
         justNow: '刚刚',
         minutesAgo: ({ count }: { count: number }) => `${count} 分钟前`,
         hoursAgo: ({ count }: { count: number }) => `${count} 小时前`,
+        daysAgo: ({ count }: { count: number }) => `${count}天前`,
     },
 
     connect: {

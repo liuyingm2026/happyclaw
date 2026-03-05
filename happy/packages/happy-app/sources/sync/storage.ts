@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { useShallow } from 'zustand/react/shallow'
-import { Session, Machine, GitStatus } from "./storageTypes";
+import { Session, Machine, GitStatus, OpenClawConversation, OpenClawMessage, OpenClawGatewayStatus } from "./storageTypes";
 import { createReducer, reducer, ReducerState } from "./reducer/reducer";
 import { Message } from "./typesMessage";
 import { NormalizedMessage } from "./typesRaw";
@@ -90,6 +90,12 @@ interface StorageState {
     feedHasMore: boolean;
     feedLoaded: boolean;  // True after initial feed fetch
     friendsLoaded: boolean;  // True after initial friends fetch
+    // OpenClaw state
+    openclawConversations: Record<string, OpenClawConversation>;
+    openclawMessages: Record<string, OpenClawMessage[]>;  // conversationId -> messages
+    openclawGatewayStatus: OpenClawGatewayStatus;
+    openclawLoaded: boolean;  // True after initial conversations fetch
+    openclawStreamingMessages: Record<string, { content: string; messageId: string }>;  // conversationId -> streaming content
     realtimeStatus: 'disconnected' | 'connecting' | 'connected' | 'error';
     realtimeMode: 'idle' | 'speaking';
     socketStatus: 'disconnected' | 'connecting' | 'connected' | 'error';
@@ -146,6 +152,14 @@ interface StorageState {
     // Feed methods
     applyFeedItems: (items: FeedItem[]) => void;
     clearFeed: () => void;
+    // OpenClaw methods
+    applyOpenClawConversations: (conversations: OpenClawConversation[]) => void;
+    applyOpenClawMessages: (conversationId: string, messages: OpenClawMessage[]) => void;
+    addOpenClawMessage: (conversationId: string, message: OpenClawMessage) => void;
+    updateOpenClawMessage: (conversationId: string, message: OpenClawMessage) => void;
+    setOpenClawGatewayStatus: (status: OpenClawGatewayStatus) => void;
+    updateOpenClawStreamingContent: (conversationId: string, messageId: string, chunk: string, isComplete: boolean) => void;
+    clearOpenClawStreamingContent: (conversationId: string) => void;
 }
 
 // Helper function to build unified list view data from sessions and machines
@@ -268,6 +282,17 @@ export const storage = create<StorageState>()((set, get) => {
         feedHasMore: false,
         feedLoaded: false,  // Initialize as false
         friendsLoaded: false,  // Initialize as false
+        // OpenClaw state initialization
+        openclawConversations: {},
+        openclawMessages: {},
+        openclawGatewayStatus: {
+            connected: false,
+            gatewayUrl: null,
+            lastConnectedAt: null,
+            lastError: null,
+        },
+        openclawLoaded: false,
+        openclawStreamingMessages: {},
         sessionsData: null,  // Legacy - to be removed
         sessionListViewData: null,
         sessionMessages: {},
@@ -1065,6 +1090,104 @@ export const storage = create<StorageState>()((set, get) => {
             feedLoaded: false,  // Reset loading flag
             friendsLoaded: false  // Reset loading flag
         })),
+        // OpenClaw methods
+        applyOpenClawConversations: (conversations: OpenClawConversation[]) => set((state) => {
+            const merged = { ...state.openclawConversations };
+            conversations.forEach(conv => {
+                merged[conv.id] = conv;
+            });
+            return {
+                ...state,
+                openclawConversations: merged,
+                openclawLoaded: true
+            };
+        }),
+        applyOpenClawMessages: (conversationId: string, messages: OpenClawMessage[]) => set((state) => {
+            // Create a map for deduplication
+            const existing = state.openclawMessages[conversationId] || [];
+            const messageMap = new Map<string, OpenClawMessage>();
+            existing.forEach(msg => messageMap.set(msg.id, msg));
+            messages.forEach(msg => messageMap.set(msg.id, msg));
+
+            // Sort by createdAt
+            const sorted = Array.from(messageMap.values()).sort((a, b) => a.createdAt - b.createdAt);
+
+            return {
+                ...state,
+                openclawMessages: {
+                    ...state.openclawMessages,
+                    [conversationId]: sorted
+                }
+            };
+        }),
+        addOpenClawMessage: (conversationId: string, message: OpenClawMessage) => set((state) => {
+            const existing = state.openclawMessages[conversationId] || [];
+            // Check for duplicate
+            if (existing.some(m => m.id === message.id)) {
+                return state;
+            }
+            return {
+                ...state,
+                openclawMessages: {
+                    ...state.openclawMessages,
+                    [conversationId]: [...existing, message].sort((a, b) => a.createdAt - b.createdAt)
+                }
+            };
+        }),
+        updateOpenClawMessage: (conversationId: string, message: OpenClawMessage) => set((state) => {
+            const existing = state.openclawMessages[conversationId] || [];
+            const updated = existing.map(m => m.id === message.id ? message : m);
+            return {
+                ...state,
+                openclawMessages: {
+                    ...state.openclawMessages,
+                    [conversationId]: updated
+                }
+            };
+        }),
+        setOpenClawGatewayStatus: (status: OpenClawGatewayStatus) => set((state) => ({
+            ...state,
+            openclawGatewayStatus: status
+        })),
+        updateOpenClawStreamingContent: (conversationId: string, messageId: string, chunk: string, isComplete: boolean) => set((state) => {
+            const current = state.openclawStreamingMessages[conversationId];
+            const newContent = current?.messageId === messageId
+                ? current.content + chunk
+                : chunk;
+
+            const updates: Partial<StorageState> = {
+                openclawStreamingMessages: {
+                    ...state.openclawStreamingMessages,
+                    [conversationId]: { content: newContent, messageId }
+                }
+            };
+
+            // If streaming is complete, update the actual message
+            if (isComplete) {
+                const messages = state.openclawMessages[conversationId] || [];
+                const updatedMessages = messages.map(m =>
+                    m.id === messageId
+                        ? { ...m, content: newContent, status: 'complete' as const }
+                        : m
+                );
+                updates.openclawMessages = {
+                    ...state.openclawMessages,
+                    [conversationId]: updatedMessages
+                };
+                // Clear streaming content
+                const { [conversationId]: _, ...remaining } = state.openclawStreamingMessages;
+                updates.openclawStreamingMessages = remaining;
+            }
+
+            return { ...state, ...updates };
+        }),
+        clearOpenClawStreamingContent: (conversationId: string) => set((state) => {
+            const { [conversationId]: _, ...remaining } = state.openclawStreamingMessages;
+            return {
+                ...state,
+                openclawStreamingMessages: remaining
+            };
+        }),
     }
 });
 
@@ -1293,4 +1416,35 @@ export function useRequestedFriends() {
         // Filter friends to get sent requests (where status is 'requested')
         return Object.values(state.friends).filter(friend => friend.status === 'requested');
     }));
+}
+
+// OpenClaw hooks
+export function useOpenClawConversations(): OpenClawConversation[] {
+    return storage(useShallow((state) => {
+        if (!state.openclawLoaded) return [];
+        return Object.values(state.openclawConversations)
+            .sort((a, b) => b.lastActiveAt - a.lastActiveAt);
+    }));
+}
+
+export function useOpenClawConversation(conversationId: string | null): OpenClawConversation | null {
+    return storage(useShallow((state) =>
+        conversationId ? state.openclawConversations[conversationId] ?? null : null
+    ));
+}
+
+export function useOpenClawMessages(conversationId: string): OpenClawMessage[] {
+    return storage(useShallow((state) => state.openclawMessages[conversationId] ?? []));
+}
+
+export function useOpenClawGatewayStatus(): OpenClawGatewayStatus {
+    return storage(useShallow((state) => state.openclawGatewayStatus));
+}
+
+export function useOpenClawLoaded(): boolean {
+    return storage((state) => state.openclawLoaded);
+}
+
+export function useOpenClawStreamingContent(conversationId: string): { content: string; messageId: string } | null {
+    return storage(useShallow((state) => state.openclawStreamingMessages[conversationId] ?? null));
 }

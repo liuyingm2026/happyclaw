@@ -30,6 +30,7 @@ export const ru: TranslationStructure = {
         // Tab navigation labels
         inbox: 'Входящие',
         sessions: 'Терминалы',
+        openclaw: 'OpenClaw',
         settings: 'Настройки',
     },
 
@@ -38,6 +39,16 @@ export const ru: TranslationStructure = {
         emptyTitle: 'Входящие пусты',
         emptyDescription: 'Подключитесь к друзьям, чтобы начать делиться сессиями',
         updates: 'Обновления',
+    },
+
+    openclaw: {
+        // OpenClaw screen
+        gatewayConnected: 'Gateway Connected',
+        gatewayDisconnected: 'Gateway Disconnected',
+        noConversations: 'No Conversations',
+        noConversationsHint: 'Start a new conversation with OpenClaw',
+        newConversation: 'New Conversation',
+        inputPlaceholder: 'Type a message...',
     },
 
     common: {
@@ -389,6 +400,7 @@ export const ru: TranslationStructure = {
         justNow: 'только что',
         minutesAgo: ({ count }: { count: number }) => `${count} ${plural({ count, one: 'минуту', few: 'минуты', many: 'минут' })} назад`,
         hoursAgo: ({ count }: { count: number }) => `${count} ${plural({ count, one: 'час', few: 'часа', many: 'часов' })} назад`,
+        daysAgo: ({ count }: { count: number }) => `${count} дн. назад`,
     },
 
     session: {

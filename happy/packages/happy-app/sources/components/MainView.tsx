@@ -10,6 +10,7 @@ import { SessionsList } from './SessionsList';
 import { FABWide } from './FABWide';
 import { TabBar, TabType } from './TabBar';
 import { InboxView } from './InboxView';
+import { OpenClawView } from './OpenClawView';
 import { SettingsViewWrapper } from './SettingsViewWrapper';
 import { SessionsListWrapper } from './SessionsListWrapper';
 import { Header } from './navigation/Header';
@@ -102,11 +103,12 @@ const styles = StyleSheet.create((theme) => ({
 const TAB_TITLES = {
     sessions: 'tabs.sessions',
     inbox: 'tabs.inbox',
+    openclaw: 'tabs.openclaw',
     settings: 'tabs.settings',
 } as const;
 
 // Active tabs
-type ActiveTabType = 'sessions' | 'inbox' | 'settings';
+type ActiveTabType = 'sessions' | 'inbox' | 'openclaw' | 'settings';
 
 // Header title component with connection status
 const HeaderTitle = React.memo(({ activeTab }: { activeTab: ActiveTabType }) => {
@@ -248,6 +250,8 @@ export const MainView = React.memo(({ variant }: MainViewProps) => {
         switch (activeTab) {
             case 'inbox':
                 return <InboxView />;
+            case 'openclaw':
+                return <OpenClawView />;
             case 'settings':
                 return <SettingsViewWrapper />;
             case 'sessions':
